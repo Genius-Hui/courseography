@@ -6,15 +6,39 @@ import Control.Monad.Trans.Reader (ReaderT)
 import Data.Char (toUpper)
 import qualified Data.Text as T
 import Control.Monad.IO.Class (liftIO, MonadIO)
+import qualified Network.HTTP as HTTP
+import Network.HTTP.Auth as Auth
+import Network.URI (parseURI)
+import Data.Maybe (fromJust)
+import Data.Time.Clock
+import Data.Time.Calendar
+import Data.Time.Format
+import System.Locale (defaultTimeLocale)
+import Data.List (isInfixOf)
+
+getToday :: IO String
+getToday = do
+    time <- getCurrentTime
+    let (year, month, day) = toGregorian $ utctDay time
+    return $ formatTime defaultTimeLocale "%F" time
+
+baseUrl :: String
+baseUrl = ""
 
 main :: IO ()
 main = do
-    s <- readFile "2015-07-15.txt"
-    let f = lines s
-        g = map (info . words) f
-    --print g
-    runSqlite databasePath $ do
-        mapM_ updateNums g
+    today <- getToday
+    rsp <- HTTP.simpleHTTP (HTTP.getRequest $ baseUrl ++ today ++ ".txt")
+    body <- HTTP.getResponseBody rsp
+    if "<h1>Not Found</h1>" `isInfixOf` body
+    then
+        print body
+    else
+        let f = lines body
+            g = map (info . words) f
+        in
+            runSqlite databasePath $
+                mapM_ updateNums g
 
 info :: [String] -> (String, String, String, Int, Int, Int)
 info strs =
