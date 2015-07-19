@@ -69,6 +69,7 @@ executable courseography
     markdown,
     system-filepath,
     hslogger,
-    time
+    time,
+    xlsx
   default-language:    Haskell2010
   ghc-options: -Wall -fwarn-tabs
